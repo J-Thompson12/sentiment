@@ -48,7 +48,7 @@ func main() {
 		// fmt.Println(doc.text + " |" + doc.sentiment + " --------- " + sentiment)
 	}
 	fmt.Printf("Accuracy on TEST dataset is %2.1f%% With %2.1f%% as neutral\n", float64(accurates)*100/float64(count), float64(neutral)*100/float64(count))
-	//fmt.Println(c.Words)
+	// fmt.Println(c.Words)
 }
 
 func setupData(file string) {

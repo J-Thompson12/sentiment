@@ -68,6 +68,15 @@ func tokenize(sentence string) []string {
 	return tokens
 }
 
+func tokenizeMulti(sentence string, size int) []string {
+	words := tokenize(sentence)
+	var tokens []string
+	for i := 0; i+size <= len(words); i++ {
+		tokens = append(tokens, strings.Join(words[i:i+size], " "))
+	}
+	return tokens
+}
+
 // stem a word using the Snowball algorithm
 func stem(word string) string {
 	stemmed, err := snowball.Stem(word, "english", true)

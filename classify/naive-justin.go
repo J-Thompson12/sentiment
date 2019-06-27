@@ -1,8 +1,9 @@
 package classify
 
 const (
-	positive = "positive"
-	negative = "negative"
+	positive    = "positive"
+	negative    = "negative"
+	defaultProb = 0.00000000001
 )
 
 // Classifier creates a struct with the following elements
@@ -71,9 +72,9 @@ func (c *Classifier) Train(category string, data string) {
 // clean up and split Words in DataSet, then stem each word and count the occurrence
 func countWords(document string) (wordCount map[string]int) {
 	words := tokenize(document)
+	words = append(words, tokenizeMulti(document, 2)...)
 	wordCount = make(map[string]int)
 	for _, word := range words {
-		// key := stem(strings.ToLower(word))
 		wordCount[word]++
 	}
 	return
@@ -97,7 +98,7 @@ func (c *Classifier) Classify(document string) (category string) {
 func (c *Classifier) probabilities(document string) (p map[string]float64) {
 	p = make(map[string]float64)
 	for category := range c.Words {
-		p[category] = c.setCategory(category, document)
+		p[category] = c.setCategory(category, document) * c.pCategory(category)
 	}
 	return
 }
@@ -115,9 +116,5 @@ func (c *Classifier) pCategory(category string) float64 {
 }
 
 func (c *Classifier) pWordCategory(category string, word string) float64 {
-	return float64(c.Words[category][word]+1) / float64(c.WordCategoryTotal[category]+14)
-}
-
-func (c *Classifier) pCategoryDocument(category string, document string) float64 {
-	return c.setCategory(category, document) * c.pCategory(category)
+	return float64(c.Words[category][word]+1) / (float64(c.WordCategoryTotal[category]) + float64(c.TotalWords))
 }
