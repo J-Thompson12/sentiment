@@ -81,7 +81,7 @@ func tokenizeMulti(sentence string, size int) []string {
 	return tokens
 }
 
-// stem a word using the Snowball algorithm
+// stem a word using the Snowball algorithm from https://github.com/snowballstem/snowball
 func stem(word string) string {
 	stemmed, err := snowball.Stem(word, "english", true)
 	if err == nil {
