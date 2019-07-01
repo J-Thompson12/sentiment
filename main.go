@@ -11,11 +11,13 @@ import (
 	classify "github.com/nuvi/justin-sentiment/classify"
 )
 
+var categories = []string{"positive", "negative"}
+
 // parameters
 var dataFile = "all.txt"
 var train []document
 var test []document
-var testPercentage = 0.1
+var testPercentage = 0.0
 
 // datasets
 type document struct {
@@ -26,29 +28,38 @@ type document struct {
 func main() {
 	setupData(dataFile)
 	fmt.Println("number of docs in TRAIN dataset:", len(train))
-	fmt.Println("number of docs in TEST dataset:", len(test))
-	c := classify.CreateClassifier()
+	// fmt.Println("number of docs in TEST dataset:", len(test))
+	c := classify.CreateClassifier(categories)
 
 	// train on train dataset
 	for _, doc := range train {
 		c.Train(doc.sentiment, doc.text)
 	}
 
-	// validate dataset
-	count, accurates, neutral := 0, 0, 0
-	for _, doc := range test {
-		count++
-		sentiment := c.Classify(doc.text)
-		if sentiment == doc.sentiment {
-			accurates++
-		}
-		if sentiment == "neutral" {
-			neutral++
-		}
-		// fmt.Println(doc.text + " |" + doc.sentiment + " --------- " + sentiment)
+
+	// Test individual user entered sentences
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		fmt.Print("Enter sentence: ")
+		text, _ := reader.ReadString('\n')
+		sentiment := c.Classify(text)
+		fmt.Printf("This sentence is %v\n", sentiment)
 	}
-	fmt.Printf("Accuracy on TEST dataset is %2.1f%% With %2.1f%% as neutral\n", float64(accurates)*100/float64(count), float64(neutral)*100/float64(count))
-	// fmt.Println(c.Words)
+
+	// validate dataset
+	// count, accurates, neutral := 0, 0, 0
+	// for _, doc := range test {
+	// 	count++
+	// 	sentiment := c.Classify(doc.text)
+	// 	if sentiment == doc.sentiment {
+	// 		accurates++
+	// 	}
+	// 	if sentiment == "neutral" {
+	// 		neutral++
+	// 	}
+	// }
+	// fmt.Printf("Accuracy on TEST dataset is %2.1f%% With %2.1f%% as neutral\n", float64(accurates)*100/float64(count), float64(neutral)*100/float64(count))
+
 }
 
 func setupData(file string) {

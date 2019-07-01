@@ -44,6 +44,10 @@ func cleanup(sentence string) string {
 
 	sentence = strings.ReplaceAll(sentence, "#", " #")
 	sentence = strings.ReplaceAll(sentence, "@", " @")
+	sentence = strings.ReplaceAll(sentence, ".", "")
+	sentence = strings.ReplaceAll(sentence, "?", "")
+	sentence = strings.ReplaceAll(sentence, "!", "")
+	sentence = strings.ReplaceAll(sentence, ",", "")
 	sentence = strings.ToLower(sentence)
 	//fmt.Println(sentence)
 
