@@ -1,5 +1,7 @@
 package classify
 
+const threshold = 1.1
+
 // Classifier creates a struct with the following elements
 // Words is a map of maps that represent the words that have been trained by the classifier
 // example
@@ -102,6 +104,15 @@ func (c *Classifier) Classify(document string) string {
 			result = category
 		}
 	}
+	if result == "positive" {
+		if prob["positive"]/prob["negative"] < threshold {
+			result = "neutral"
+		}
+	} else {
+		if prob["negative"]/prob["positive"] < threshold {
+			result = "neutral"
+		}
+	}
 
 	return result
 }
@@ -133,5 +144,5 @@ func (c *Classifier) categoryProb(category string) float64 {
 // Gets the probablity of each word with a laplace estimator of +1 for smoothing
 func (c *Classifier) wordProb(category string, word string) float64 {
 	//return (TFIDF(word, document, c)) / (float64(c.WordCategoryTotal[category]) + float64(c.TotalWords))
-	return (float64(c.Words[category][word]) + 1) / (float64(c.WordCategoryTotal[category]) + float64(c.TotalWords))
+	return (float64(c.Words[category][word]) + 1) / (float64(c.TotalWords))
 }
