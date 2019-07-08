@@ -17,7 +17,7 @@ var categories = []string{"positive", "negative"}
 var dataFile = "all.txt"
 var train []document
 var test []document
-var testPercentage = 0.0
+var testPercentage = 0.2
 
 // datasets
 type document struct {
@@ -35,7 +35,6 @@ func main() {
 	for _, doc := range train {
 		c.Train(doc.sentiment, doc.text)
 	}
-
 
 	// Test individual user entered sentences
 	reader := bufio.NewReader(os.Stdin)
