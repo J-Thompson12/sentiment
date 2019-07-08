@@ -58,7 +58,7 @@ func CreateClassifier(categories []string) (c Classifier) {
 
 // Train the classifier
 func (c *Classifier) Train(category string, data string) {
-	for word, count := range countwords(data) {
+	for word, count := range countWords(data) {
 		c.words[category][word] += count
 		c.wordCategoryTotal[category] += count
 		c.totalWords += count
@@ -69,7 +69,7 @@ func (c *Classifier) Train(category string, data string) {
 }
 
 // clean up and split words in DataSet, then stem each word and count the occurrence. This will split the words individually and into ngrams of 2.
-func countwords(document string) (wordCount map[string]int) {
+func countWords(document string) (wordCount map[string]int) {
 	words := tokenize(document)
 	words = append(words, tokenizeMulti(document, 2)...)
 	wordCount = make(map[string]int)
@@ -130,7 +130,7 @@ func (c *Classifier) probabilities(document string) (p map[string]float64) {
 // Checks each individual word to see what category they belong to and multiplies them
 func (c *Classifier) setCategory(category string, document string) (p float64) {
 	p = 1.0
-	for word := range countwords(document) {
+	for word := range countWords(document) {
 		p = p * c.wordProb(category, word)
 	}
 	return p
@@ -143,6 +143,5 @@ func (c *Classifier) categoryProb(category string) float64 {
 
 // Gets the probablity of each word with a laplace estimator of +1 for smoothing
 func (c *Classifier) wordProb(category string, word string) float64 {
-	//return (TFIDF(word, document, c)) / (float64(c.wordCategoryTotal[category]) + float64(c.totalWords))
 	return (float64(c.words[category][word]) + 1.0) / (float64(c.documentCategoryTotal[category]+c.totalWords) + 1.0)
 }
