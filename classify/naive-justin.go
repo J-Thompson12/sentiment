@@ -1,6 +1,12 @@
 package classify
 
+import (
+	"sync"
+)
+
 const threshold = 1.1
+
+var lock sync.RWMutex
 
 // Classifier creates a struct with the following elements
 // words is a map of maps that represent the words that have been trained by the classifier
@@ -58,41 +64,32 @@ func CreateClassifier(categories []string) (c Classifier) {
 
 // Train the classifier
 func (c *Classifier) Train(category string, data string) {
-	for word, count := range countWords(data) {
+	words, totalCount := countWords(data)
+	for word, count := range words {
+		lock.Lock()
 		c.words[category][word] += count
 		c.wordCategoryTotal[category] += count
-		c.totalWords += count
 		c.numDocSeen[word]++
+		lock.Unlock()
 	}
+	c.totalWords += totalCount
 	c.documentCategoryTotal[category]++
 	c.totalDocuments++
 }
 
 // clean up and split words in DataSet, then stem each word and count the occurrence. This will split the words individually and into ngrams of 2.
-func countWords(document string) (wordCount map[string]int) {
-	words := tokenize(document)
+func countWords(document string) (wordCount map[string]int, totalWords int) {
+	words, count := tokenize(document)
 	words = append(words, tokenizeMulti(document, 2)...)
 	wordCount = make(map[string]int)
 	for _, word := range words {
 		wordCount[word]++
 	}
-	return
+	return wordCount, count
 }
 
 // Classify a DataSet
 func (c *Classifier) Classify(document string) string {
-	// get all the probabilities of each category
-	// this is used to sort based of -1 to 1
-	// prob := c.probabilities(document)
-	// value := prob[positive] + (prob[negative] * -1)
-	// if value > 0 {
-	// 	category = positive
-	// } else if value < 0 {
-	// 	category = negative
-	// } else {
-	// 	category = "neutral"
-	// }
-
 	prob := c.probabilities(document)
 
 	//this picks the category with the largest property
@@ -104,15 +101,16 @@ func (c *Classifier) Classify(document string) string {
 			result = category
 		}
 	}
-	if result == "positive" {
-		if prob["positive"]/prob["negative"] < threshold {
-			result = "neutral"
-		}
-	} else {
-		if prob["negative"]/prob["positive"] < threshold {
-			result = "neutral"
-		}
-	}
+
+	// if result == "positive" {
+	// 	if prob["positive"]/prob["negative"] < threshold {
+	// 		result = "neutral"
+	// 	}
+	// } else {
+	// 	if prob["negative"]/prob["positive"] < threshold {
+	// 		result = "neutral"
+	// 	}
+	// }
 
 	return result
 }
@@ -127,21 +125,22 @@ func (c *Classifier) probabilities(document string) (p map[string]float64) {
 	return
 }
 
-// Checks each individual word to see what category they belong to and multiplies them
-func (c *Classifier) setCategory(category string, document string) (p float64) {
-	p = 1.0
-	for word := range countWords(document) {
-		p = p * c.wordProb(category, word)
-	}
-	return p
-}
-
 // Gets the probablity of the probability of each of the categories
 func (c *Classifier) categoryProb(category string) float64 {
 	return float64(c.documentCategoryTotal[category]) / float64(c.totalDocuments)
 }
 
+// Checks each individual word to see what category they belong to and multiplies them
+func (c *Classifier) setCategory(category string, document string) (p float64) {
+	p = 1.0
+	words, _ := countWords(document)
+	for word := range words {
+		p = p * c.wordProb(category, word)
+	}
+	return p
+}
+
 // Gets the probablity of each word with a laplace estimator of +1 for smoothing
 func (c *Classifier) wordProb(category string, word string) float64 {
-	return (float64(c.words[category][word]) + 1.0) / (float64(c.documentCategoryTotal[category]+c.totalWords) + 1.0)
+	return (float64(c.words[category][word]) + 1.0) / (float64(c.wordCategoryTotal[category] + c.totalWords))
 }

@@ -1,4 +1,4 @@
-This place tastes good|positive
-Crust is not good.|negative
-Not tasty crust and the texture was just nasty.|negative
-Stopped by during the late Wow Wow May bank holiday off Rick Steve recommendation and loved it.|positive
+This place tastes good,positive
+Crust is not good.,negative
+Not tasty crust and the texture was just nasty.,negative
+Stopped by during the late Wow Wow May bank holiday off Rick Steve recommendation and loved it.,positive

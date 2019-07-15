@@ -14,10 +14,10 @@ func TestTokenize(t *testing.T) {
 	// U+1F600
 	b := "Illuminati meeting, more hits on the way, be patient, excuse me. Lmao.🎶😂🎶 "
 	c := "a #💩 #and #🍦 #😳"
-	result := tokenize(a)
+	result, _ := tokenize(a)
 	fmt.Println(result)
-	result = tokenize(b)
+	result, _ = tokenize(b)
 	fmt.Println(result)
-	result = tokenize(c)
+	result, _ = tokenize(c)
 	fmt.Println(result)
 }

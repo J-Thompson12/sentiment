@@ -3,9 +3,11 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"math/rand"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	classify "github.com/nuvi/justin-sentiment/classify"
@@ -18,6 +20,8 @@ var dataFile = "all.txt"
 var train []document
 var test []document
 var testPercentage = 0.2
+var wg sync.WaitGroup
+var count, accurates, neutral = 0, 0, 0
 
 // datasets
 type document struct {
@@ -26,39 +30,48 @@ type document struct {
 }
 
 func main() {
+	start := time.Now()
 	setupData(dataFile)
 	fmt.Println("number of docs in TRAIN dataset:", len(train))
-	// fmt.Println("number of docs in TEST dataset:", len(test))
+	fmt.Println("number of docs in TEST dataset:", len(test))
 	c := classify.CreateClassifier(categories)
 
 	// train on train dataset
 	for _, doc := range train {
 		c.Train(doc.sentiment, doc.text)
 	}
+	fmt.Println("Finished training")
 
 	// Test individual user entered sentences
-	reader := bufio.NewReader(os.Stdin)
-	for {
-		fmt.Print("Enter sentence: ")
-		text, _ := reader.ReadString('\n')
-		sentiment := c.Classify(text)
-		fmt.Printf("This sentence is %v\n", sentiment)
-	}
+	// reader := bufio.NewReader(os.Stdin)
+	// for {
+	// 	fmt.Print("Enter sentence: ")
+	// 	text, _ := reader.ReadString('\n')
+	// 	sentiment := c.Classify(text)
+	// 	fmt.Printf("This sentence is %v\n", sentiment)
+	// }
 
 	// validate dataset
-	// count, accurates, neutral := 0, 0, 0
-	// for _, doc := range test {
-	// 	count++
-	// 	sentiment := c.Classify(doc.text)
-	// 	if sentiment == doc.sentiment {
-	// 		accurates++
-	// 	}
-	// 	if sentiment == "neutral" {
-	// 		neutral++
-	// 	}
-	// }
-	// fmt.Printf("Accuracy on TEST dataset is %2.1f%% With %2.1f%% as neutral\n", float64(accurates)*100/float64(count), float64(neutral)*100/float64(count))
+	wg.Add(len(test))
+	for _, doc := range test {
+		count++
+		go validate(doc.text, doc.sentiment, &c)
+	}
+	wg.Wait()
+	fmt.Printf("Accuracy on TEST dataset is %2.1f%% With %2.1f%% as neutral\n", float64(accurates)*100/float64(count), float64(neutral)*100/float64(count))
+	elapsed := time.Since(start)
+	log.Printf("runtime was%s", elapsed)
+}
 
+func validate(text string, docSent string, c *classify.Classifier) {
+	defer wg.Done()
+	sentiment := c.Classify(text)
+	if sentiment == docSent {
+		accurates++
+	}
+	if sentiment == "neutral" {
+		neutral++
+	}
 }
 
 func setupData(file string) {

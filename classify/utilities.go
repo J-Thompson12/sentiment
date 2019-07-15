@@ -32,6 +32,7 @@ var stopwords = map[string]struct{}{
 	"isn't": struct{}{}, "shouldn't": struct{}{}, "wasn't": struct{}{}, "weren't": struct{}{}, "won't": struct{}{}, "wouldn't": struct{}{},
 }
 
+// IsStopword does a thing
 func IsStopword(w string) bool {
 	_, ok := stopwords[w]
 	return ok
@@ -59,21 +60,23 @@ func cleanup(sentence string) string {
 }
 
 // tokenize create an array of words from a sentence
-func tokenize(sentence string) []string {
+func tokenize(sentence string) ([]string, int) {
 	s := cleanup(sentence)
 	words := strings.Fields(s)
 	var tokens []string
+	count := 0
 	for _, w := range words {
+		count++
 		if !IsStopword(w) {
 			w = stem(w)
 			tokens = append(tokens, w)
 		}
 	}
-	return tokens
+	return tokens, count
 }
 
 func tokenizeMulti(sentence string, size int) []string {
-	words := tokenize(sentence)
+	words, _ := tokenize(sentence)
 	var tokens []string
 	for i := 0; i+size <= len(words); i++ {
 		tokens = append(tokens, strings.Join(words[i:i+size], " "))

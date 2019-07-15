@@ -15,7 +15,7 @@ var positiveString2 = "I really liked the food here"
 var negativeString1 = "that was the worst place i have ever been to"
 var negativeString2 = "I cant believe how horrible this was"
 var neutralString = "The food wasnt great but it was okay"
-var tokenizeString = "she was not my favorite. my favorite was the main guy"
+
 var dataFile = "../all.txt"
 var categories = []string{"positive", "negative"}
 var train []document
@@ -29,7 +29,7 @@ type document struct {
 }
 
 func TestCountWords(t *testing.T) {
-	tokens := countWords(tokenizeString)
+	tokens, _ := countWords("she was not my favorite. my favorite was the main guy")
 	assert.Equal(t, 6, len(tokens), "these should be equal")
 }
 
