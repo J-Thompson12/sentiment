@@ -1,6 +1,7 @@
 package classify
 
 import (
+	"math"
 	"sync"
 )
 
@@ -34,27 +35,27 @@ var lock sync.RWMutex
 // }
 // numDocSeen stores the number of documents contains a specific word
 type Classifier struct {
-	words                 map[string]map[string]int
-	totalDocuments        int
-	documentCategoryTotal map[string]int
-	wordCategoryTotal     map[string]int
-	totalWords            int
-	numDocSeen            map[string]int
+	words                 map[string]map[string]float64
+	totalDocuments        float64
+	documentCategoryTotal map[string]float64
+	wordCategoryTotal     map[string]float64
+	totalWords            float64
+	numDocSeen            map[string]float64
 }
 
 // CreateClassifier create and initialize the classifier
 func CreateClassifier(categories []string) (c Classifier) {
 	c = Classifier{
-		words:                 make(map[string]map[string]int),
-		documentCategoryTotal: make(map[string]int),
-		wordCategoryTotal:     make(map[string]int),
+		words:                 make(map[string]map[string]float64),
+		documentCategoryTotal: make(map[string]float64),
+		wordCategoryTotal:     make(map[string]float64),
 		totalDocuments:        0,
 		totalWords:            0,
-		numDocSeen:            make(map[string]int),
+		numDocSeen:            make(map[string]float64),
 	}
 
 	for _, category := range categories {
-		c.words[category] = make(map[string]int)
+		c.words[category] = make(map[string]float64)
 		c.documentCategoryTotal[category] = 0
 		c.wordCategoryTotal[category] = 0
 	}
@@ -64,24 +65,24 @@ func CreateClassifier(categories []string) (c Classifier) {
 
 // Train the classifier
 func (c *Classifier) Train(category string, data string) {
-	words, totalCount := countWords(data)
+	words, _ := countWords(data)
 	for word, count := range words {
 		lock.Lock()
 		c.words[category][word] += count
 		c.wordCategoryTotal[category] += count
 		c.numDocSeen[word]++
+		c.totalWords += count
 		lock.Unlock()
 	}
-	c.totalWords += totalCount
 	c.documentCategoryTotal[category]++
 	c.totalDocuments++
 }
 
-// clean up and split words in DataSet, then stem each word and count the occurrence. This will split the words individually and into ngrams of 2.
-func countWords(document string) (wordCount map[string]int, totalWords int) {
+// clean up and split words in DataSet, then stem each word and count the occurrence. This will split the words individually and float64o ngrams of 2.
+func countWords(document string) (wordCount map[string]float64, totalWords float64) {
 	words, count := tokenize(document)
 	words = append(words, tokenizeMulti(document, 2)...)
-	wordCount = make(map[string]int)
+	wordCount = make(map[string]float64)
 	for _, word := range words {
 		wordCount[word]++
 	}
@@ -90,10 +91,10 @@ func countWords(document string) (wordCount map[string]int, totalWords int) {
 
 // Classify a DataSet
 func (c *Classifier) Classify(document string) string {
-	prob := c.probabilities(document)
-
-	//this picks the category with the largest property
 	var result string
+
+	// Mulitnomial naive bayes
+	prob := c.probMulti(document)
 	highNum := 0.0
 	for category, probability := range prob {
 		if probability > highNum {
@@ -102,45 +103,24 @@ func (c *Classifier) Classify(document string) string {
 		}
 	}
 
-	// if result == "positive" {
-	// 	if prob["positive"]/prob["negative"] < threshold {
-	// 		result = "neutral"
-	// 	}
-	// } else {
-	// 	if prob["negative"]/prob["positive"] < threshold {
-	// 		result = "neutral"
+	//compliment naive bayes uses lowest number to determine category
+	// prob := c.probabilitiesComp(document)
+	// lowNum := 99999999999990.0
+	// for category, probability := range prob {
+	// 	if probability < lowNum {
+	// 		lowNum = probability
+	// 		result = category
 	// 	}
 	// }
 
 	return result
 }
 
-// Using basic naive bayes equation to get the probability that the dataset belongs to a specific category
-func (c *Classifier) probabilities(document string) (p map[string]float64) {
-	p = make(map[string]float64)
-
-	for category := range c.words {
-		p[category] = c.setCategory(category, document) * c.categoryProb(category)
-	}
-	return
-}
-
 // Gets the probablity of the probability of each of the categories
 func (c *Classifier) categoryProb(category string) float64 {
-	return float64(c.documentCategoryTotal[category]) / float64(c.totalDocuments)
+	return c.documentCategoryTotal[category] / c.totalDocuments
 }
 
-// Checks each individual word to see what category they belong to and multiplies them
-func (c *Classifier) setCategory(category string, document string) (p float64) {
-	p = 1.0
-	words, _ := countWords(document)
-	for word := range words {
-		p = p * c.wordProb(category, word)
-	}
-	return p
-}
-
-// Gets the probablity of each word with a laplace estimator of +1 for smoothing
-func (c *Classifier) wordProb(category string, word string) float64 {
-	return (float64(c.words[category][word]) + 1.0) / (float64(c.wordCategoryTotal[category] + c.totalWords))
+func (c *Classifier) tfidf(word string) float64 {
+	return math.Log(c.totalDocuments / c.numDocSeen[word])
 }

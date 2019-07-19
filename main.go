@@ -16,7 +16,7 @@ import (
 var categories = []string{"positive", "negative"}
 
 // parameters
-var dataFile = "all.txt"
+var dataFile = "databig.csv"
 var train []document
 var test []document
 var testPercentage = 0.2
@@ -55,7 +55,7 @@ func main() {
 	wg.Add(len(test))
 	for _, doc := range test {
 		count++
-		go validate(doc.text, doc.sentiment, &c)
+		validate(doc.text, doc.sentiment, &c)
 	}
 	wg.Wait()
 	fmt.Printf("Accuracy on TEST dataset is %2.1f%% With %2.1f%% as neutral\n", float64(accurates)*100/float64(count), float64(neutral)*100/float64(count))
@@ -82,8 +82,8 @@ func setupData(file string) {
 		os.Exit(1)
 	}
 	for _, line := range data {
-		s := strings.Split(line, "|")
-		doc, sentiment := s[0], s[1]
+		s := strings.Split(line, ",")
+		doc, sentiment := s[3], s[1]
 
 		if rand.Float64() > testPercentage {
 			train = append(train, document{sentiment, doc})

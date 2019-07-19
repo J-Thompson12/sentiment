@@ -20,7 +20,7 @@ var stopwords = map[string]struct{}{
 	"having": struct{}{}, "do": struct{}{}, "does": struct{}{}, "did": struct{}{}, "doing": struct{}{}, "a": struct{}{}, "an": struct{}{},
 	"the": struct{}{}, "and": struct{}{}, "but": struct{}{}, "if": struct{}{}, "or": struct{}{}, "because": struct{}{}, "as": struct{}{},
 	"until": struct{}{}, "while": struct{}{}, "of": struct{}{}, "at": struct{}{}, "by": struct{}{}, "for": struct{}{}, "with": struct{}{},
-	"about": struct{}{}, "against": struct{}{}, "between": struct{}{}, "into": struct{}{}, "through": struct{}{}, "during": struct{}{},
+	"about": struct{}{}, "against": struct{}{}, "between": struct{}{}, "float64o": struct{}{}, "through": struct{}{}, "during": struct{}{},
 	"before": struct{}{}, "after": struct{}{}, "above": struct{}{}, "below": struct{}{}, "to": struct{}{}, "from": struct{}{}, "up": struct{}{},
 	"down": struct{}{}, "in": struct{}{}, "out": struct{}{}, "on": struct{}{}, "off": struct{}{}, "over": struct{}{}, "under": struct{}{},
 	"again": struct{}{}, "further": struct{}{}, "then": struct{}{}, "once": struct{}{}, "here": struct{}{}, "there": struct{}{}, "when": struct{}{},
@@ -41,7 +41,7 @@ func IsStopword(w string) bool {
 // cleanup remove none-alnum characters and lowercasize them
 func cleanup(sentence string) string {
 
-	// just copying jake here, first lets coerce hashtags and mentions into their own words
+	// just copying jake here, first lets coerce hashtags and mentions float64o their own words
 
 	sentence = strings.ReplaceAll(sentence, "#", " #")
 	sentence = strings.ReplaceAll(sentence, "@", " @")
@@ -50,21 +50,21 @@ func cleanup(sentence string) string {
 	sentence = strings.ReplaceAll(sentence, "!", "")
 	sentence = strings.ReplaceAll(sentence, ",", "")
 	sentence = strings.ToLower(sentence)
-	//fmt.Println(sentence)
+	//fmt.Prfloat64ln(sentence)
 
 	// re := regexp.MustCompile(emojiiPattern)
-	// fmt.Println(re.FindAllString(sentence, -1))
+	// fmt.Prfloat64ln(re.FindAllString(sentence, -1))
 	// re := regexp.MustCompile("[^a-zA-Z 0-9]")
 	return sentence
 	// return re.ReplaceAllString(strings.ToLower(sentence), "")
 }
 
 // tokenize create an array of words from a sentence
-func tokenize(sentence string) ([]string, int) {
+func tokenize(sentence string) ([]string, float64) {
 	s := cleanup(sentence)
 	words := strings.Fields(s)
 	var tokens []string
-	count := 0
+	count := 0.0
 	for _, w := range words {
 		count++
 		if !IsStopword(w) {
