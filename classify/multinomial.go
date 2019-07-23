@@ -21,11 +21,10 @@ func (c *Classifier) wordFrequency(category string, document string) (p float64)
 	words := countWords(document)
 	for word := range words {
 		if c.hasIDF {
-			wnc = (c.normalFreq[category][word]) / (c.wordCategoryTotal[category] + c.totalWords)
+			wnc = (c.normalFreq[category][word] + 1.0) / (c.wordCategoryTotal[category] + c.totalWords)
 		} else {
 			wnc = (c.words[category][word] + 1.0) / (c.wordCategoryTotal[category] + c.totalWords)
 		}
-
 		p = p * wnc
 	}
 
@@ -33,7 +32,7 @@ func (c *Classifier) wordFrequency(category string, document string) (p float64)
 }
 
 func (c *Classifier) normFreq(wordCount float64, totalWords int, word string) float64 {
-	return ((wordCount + 1.0) / float64(totalWords)) * c.idf(word)
+	return (wordCount / float64(totalWords)) * c.idf(word)
 }
 
 func (c *Classifier) idf(word string) float64 {
