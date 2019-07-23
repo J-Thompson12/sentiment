@@ -30,16 +30,23 @@ type document struct {
 }
 
 func main() {
+	hasIDF := true
 	start := time.Now()
 	setupData(dataFile)
 	fmt.Println("number of docs in TRAIN dataset:", len(train))
 	fmt.Println("number of docs in TEST dataset:", len(test))
-	c := classify.CreateClassifier(categories)
+	c := classify.CreateClassifier(categories, hasIDF)
 
 	// train on train dataset
 	for _, doc := range train {
 		c.Train(doc.sentiment, doc.text)
 	}
+	if hasIDF {
+		for _, doc := range train {
+			c.WordFreq(doc.sentiment, doc.text)
+		}
+	}
+
 	fmt.Println("Finished training")
 
 	// Test individual user entered sentences
@@ -55,7 +62,7 @@ func main() {
 	wg.Add(len(test))
 	for _, doc := range test {
 		count++
-		validate(doc.text, doc.sentiment, &c)
+		go validate(doc.text, doc.sentiment, &c)
 	}
 	wg.Wait()
 	fmt.Printf("Accuracy on TEST dataset is %2.1f%% With %2.1f%% as neutral\n", float64(accurates)*100/float64(count), float64(neutral)*100/float64(count))

@@ -60,23 +60,21 @@ func cleanup(sentence string) string {
 }
 
 // tokenize create an array of words from a sentence
-func tokenize(sentence string) ([]string, float64) {
+func tokenize(sentence string) []string {
 	s := cleanup(sentence)
 	words := strings.Fields(s)
 	var tokens []string
-	count := 0.0
 	for _, w := range words {
-		count++
 		if !IsStopword(w) {
 			w = stem(w)
 			tokens = append(tokens, w)
 		}
 	}
-	return tokens, count
+	return tokens
 }
 
 func tokenizeMulti(sentence string, size int) []string {
-	words, _ := tokenize(sentence)
+	words := tokenize(sentence)
 	var tokens []string
 	for i := 0; i+size <= len(words); i++ {
 		tokens = append(tokens, strings.Join(words[i:i+size], " "))

@@ -1,13 +1,6 @@
 package classify
 
-import (
-	"math"
-	"sync"
-)
-
 const threshold = 1.1
-
-var lock sync.RWMutex
 
 // Classifier creates a struct with the following elements
 // words is a map of maps that represent the words that have been trained by the classifier
@@ -41,10 +34,12 @@ type Classifier struct {
 	wordCategoryTotal     map[string]float64
 	totalWords            float64
 	numDocSeen            map[string]float64
+	normalFreq            map[string]map[string]float64
+	hasIDF                bool
 }
 
 // CreateClassifier create and initialize the classifier
-func CreateClassifier(categories []string) (c Classifier) {
+func CreateClassifier(categories []string, idf bool) (c Classifier) {
 	c = Classifier{
 		words:                 make(map[string]map[string]float64),
 		documentCategoryTotal: make(map[string]float64),
@@ -52,10 +47,13 @@ func CreateClassifier(categories []string) (c Classifier) {
 		totalDocuments:        0,
 		totalWords:            0,
 		numDocSeen:            make(map[string]float64),
+		normalFreq:            make(map[string]map[string]float64),
+		hasIDF:                idf,
 	}
 
 	for _, category := range categories {
 		c.words[category] = make(map[string]float64)
+		c.normalFreq[category] = make(map[string]float64)
 		c.documentCategoryTotal[category] = 0
 		c.wordCategoryTotal[category] = 0
 	}
@@ -65,28 +63,34 @@ func CreateClassifier(categories []string) (c Classifier) {
 
 // Train the classifier
 func (c *Classifier) Train(category string, data string) {
-	words, _ := countWords(data)
+	words := countWords(data)
 	for word, count := range words {
-		lock.Lock()
 		c.words[category][word] += count
 		c.wordCategoryTotal[category] += count
 		c.numDocSeen[word]++
 		c.totalWords += count
-		lock.Unlock()
 	}
 	c.documentCategoryTotal[category]++
 	c.totalDocuments++
 }
 
+//WordFreq gives the word frequency using TFIDF
+func (c *Classifier) WordFreq(category string, data string) {
+	words := countWords(data)
+	for word, count := range words {
+		c.normalFreq[category][word] += c.normFreq(count, len(words), word)
+	}
+}
+
 // clean up and split words in DataSet, then stem each word and count the occurrence. This will split the words individually and float64o ngrams of 2.
-func countWords(document string) (wordCount map[string]float64, totalWords float64) {
-	words, count := tokenize(document)
+func countWords(document string) (wordCount map[string]float64) {
+	words := tokenize(document)
 	words = append(words, tokenizeMulti(document, 2)...)
 	wordCount = make(map[string]float64)
 	for _, word := range words {
 		wordCount[word]++
 	}
-	return wordCount, count
+	return wordCount
 }
 
 // Classify a DataSet
@@ -119,8 +123,4 @@ func (c *Classifier) Classify(document string) string {
 // Gets the probablity of the probability of each of the categories
 func (c *Classifier) categoryProb(category string) float64 {
 	return c.documentCategoryTotal[category] / c.totalDocuments
-}
-
-func (c *Classifier) tfidf(word string) float64 {
-	return math.Log(c.totalDocuments / c.numDocSeen[word])
 }

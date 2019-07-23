@@ -16,7 +16,7 @@ func (c *Classifier) probabilitiesComp(document string) (p map[string]float64) {
 
 func (c *Classifier) compliment(category string, document string) (p float64) {
 	p = 0.0
-	words, _ := countWords(document)
+	words := countWords(document)
 	for word := range words {
 		x := c.wncAll(word)
 		y := c.wnc(category, word)
