@@ -16,7 +16,7 @@ import (
 var categories = []string{"positive", "negative"}
 
 // parameters
-var dataFile = "databig.csv"
+var dataFile = "databig.txt"
 var train []document
 var test []document
 var testPercentage = 0.2
@@ -30,7 +30,7 @@ type document struct {
 }
 
 func main() {
-	hasIDF := true
+	hasIDF := false
 	start := time.Now()
 	setupData(dataFile)
 	fmt.Println("number of docs in TRAIN dataset:", len(train))
@@ -38,16 +38,20 @@ func main() {
 	c := classify.CreateClassifier(categories, hasIDF)
 
 	// train on train dataset
-	for _, doc := range train {
-		c.Train(doc.sentiment, doc.text)
-	}
-	if hasIDF {
-		for _, doc := range train {
-			c.WordFreq(doc.sentiment, doc.text)
-		}
-	}
+	// for _, doc := range train {
+	// 	c.Train(doc.sentiment, doc.text)
+	// }
+	// if hasIDF {
+	// 	for _, doc := range train {
+	// 		c.WordFreq(doc.sentiment, doc.text)
+	// 	}
+	// }
 
-	fmt.Println("Finished training")
+	// for _, doc := range train {
+	// 	classify.RedisTrain(doc.sentiment, doc.text)
+	// }
+
+	// fmt.Println("Finished training")
 
 	// Test individual user entered sentences
 	// reader := bufio.NewReader(os.Stdin)
@@ -62,8 +66,9 @@ func main() {
 	wg.Add(len(test))
 	for _, doc := range test {
 		count++
-		go validate(doc.text, doc.sentiment, &c)
+		validate(doc.text, doc.sentiment, &c)
 	}
+
 	wg.Wait()
 	fmt.Printf("Accuracy on TEST dataset is %2.1f%% With %2.1f%% as neutral\n", float64(accurates)*100/float64(count), float64(neutral)*100/float64(count))
 	elapsed := time.Since(start)
@@ -89,7 +94,8 @@ func setupData(file string) {
 		os.Exit(1)
 	}
 	for _, line := range data {
-		s := strings.Split(line, ",")
+		s := strings.Split(line, "|")
+		//fmt.Println(s)
 		doc, sentiment := s[3], s[1]
 
 		if rand.Float64() > testPercentage {

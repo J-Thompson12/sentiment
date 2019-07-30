@@ -98,7 +98,8 @@ func (c *Classifier) Classify(document string) string {
 	var result string
 
 	// Mulitnomial naive bayes
-	prob := c.probMulti(document)
+	categories := []string{"positive", "negative"}
+	prob := RedisClassify(document, categories)
 	highNum := 0.0
 	for category, probability := range prob {
 		if probability > highNum {
