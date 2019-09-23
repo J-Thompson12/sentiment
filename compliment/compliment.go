@@ -21,12 +21,12 @@ func compliment(c *train.Classifier, category string, document string) (p float6
 	p = 0.0
 	words := utilities.CountWords(document)
 	for word := range words {
-		p = p + (words[word] * wncAll(c, word)) + (words[word] * wnc(c, category, word))
+		p = p + (words[word] * frequencyAllCatagories(c, word)) + (words[word] * frequencyAllButGiven(c, category, word))
 	}
 	return p
 }
 
-func wnc(c *train.Classifier, category string, word string) float64 {
+func frequencyAllButGiven(c *train.Classifier, category string, word string) float64 {
 	sum := 0.0
 	wordSum := 0.0
 	for cat := range c.Words {
@@ -38,7 +38,7 @@ func wnc(c *train.Classifier, category string, word string) float64 {
 	return math.Log((1 + wordSum) / (c.TotalWords + sum))
 }
 
-func wncAll(c *train.Classifier, word string) float64 {
+func frequencyAllCatagories(c *train.Classifier, word string) float64 {
 	wordSum := 0.0
 	for cat := range c.Words {
 		wordSum += c.Words[cat][word]

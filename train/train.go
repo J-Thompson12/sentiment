@@ -35,7 +35,6 @@ type Classifier struct {
 	TotalWords            float64
 	NumDocSeen            map[string]float64
 	NormalFreq            map[string]map[string]float64
-	HasIDF                bool
 }
 
 // CreateClassifier create and initialize the classifier

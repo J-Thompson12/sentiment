@@ -12,6 +12,7 @@ import (
 
 	"github.com/nuvi/justin-sentiment/compliment"
 	"github.com/nuvi/justin-sentiment/multinomial"
+	"github.com/nuvi/justin-sentiment/tfidf"
 	"github.com/nuvi/justin-sentiment/train"
 )
 
@@ -21,11 +22,9 @@ var trainFile []document
 var testFile []document
 var testFilePercentage = 0.2
 var wg sync.WaitGroup
-var count, compAccurates, multiAccurates, neutral = 0, 0, 0, 0
+var compAccurates, multiAccurates, tfAccurates = 0, 0, 0
 var c train.Classifier
-var hasIDF = false
-var hasCompliment = true
-var hasMulti = true
+var hasIDF = true
 
 // datasets
 type document struct {
@@ -46,60 +45,73 @@ func main() {
 	}
 	if hasIDF {
 		for _, doc := range trainFile {
-			multinomial.TfFreq(&c, doc.sentiment, doc.text)
+			tfidf.TfFreq(&c, doc.sentiment, doc.text)
 		}
 	}
 
 	// validate dataset
 	//wg.Add(len(testFile))
 	for _, doc := range testFile {
-		count++
-		comp, multi := classify(doc.text)
+		comp := classifyComp(doc.text)
 		if comp == doc.sentiment {
 			compAccurates++
 		}
+		multi := classifyMulti(doc.text)
 		if multi == doc.sentiment {
 			multiAccurates++
+		}
+
+		tf := classifyTF(doc.text)
+		if tf == doc.sentiment {
+			tfAccurates++
 		}
 
 	}
 
 	//wg.Wait()
-	fmt.Printf("Accuracy on multi dataset is %2.1f%% With %2.1f%% as neutral\n", float64(multiAccurates)*100/float64(count), float64(neutral)*100/float64(count))
-	fmt.Printf("Accuracy on comp dataset is %2.1f%% With %2.1f%% as neutral\n", float64(compAccurates)*100/float64(count), float64(neutral)*100/float64(count))
+	fmt.Printf("Accuracy on multinomial is %2.1f%%\n", float64(multiAccurates)*100/float64(len(testFile)))
+	fmt.Printf("Accuracy on compliment is %2.1f%%\n", float64(compAccurates)*100/float64(len(testFile)))
+	fmt.Printf("Accuracy on tfidf is %2.1f%%\n", float64(tfAccurates)*100/float64(len(testFile)))
 	elapsed := time.Since(start)
 	log.Printf("runtime was%s", elapsed)
 }
 
-func classify(document string) (string, string) {
-	var compResult string
-	var multiResult string
-
-	// Mulitnomial naive bayes
-	if hasMulti {
-		prob := multinomial.ProbMulti(&c, document)
-		highNum := 0.0
-		for category, probability := range prob {
-			if probability >= highNum {
-				highNum = probability
-				multiResult = category
-			}
+func classifyMulti(document string) (result string) {
+	prob := multinomial.ProbMulti(&c, document)
+	highNum := 0.0
+	for category, probability := range prob {
+		if probability >= highNum {
+			highNum = probability
+			result = category
 		}
 	}
+	return result
+}
+
+func classifyComp(document string) (result string) {
 
 	//compliment naive bayes uses lowest number to determine category
-	if hasCompliment {
-		prob := compliment.ProbabilitiesComp(&c, document)
-		lowNum := 99999999999990.0
-		for category, probability := range prob {
-			if probability < lowNum {
-				lowNum = probability
-				compResult = category
-			}
+	prob := compliment.ProbabilitiesComp(&c, document)
+	lowNum := 99999999999990.0
+	for category, probability := range prob {
+		if probability < lowNum {
+			lowNum = probability
+			result = category
 		}
 	}
+	return result
+}
 
-	return compResult, multiResult
+func classifyTF(document string) (result string) {
+	prob := tfidf.ProbTf(&c, document)
+	highNum := 0.0
+	for category, probability := range prob {
+		if probability >= highNum {
+			highNum = probability
+			result = category
+		}
+	}
+	return result
 }
 
 func setupData(file string) {
