@@ -1,8 +1,10 @@
-package classify
+package utilities
 
 import (
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTokenize(t *testing.T) {
@@ -14,10 +16,15 @@ func TestTokenize(t *testing.T) {
 	// U+1F600
 	b := "Illuminati meeting, more hits on the way, be patient, excuse me. Lmao.🎶😂🎶 "
 	c := "a #💩 #and #🍦 #😳"
-	result, _ := tokenize(a)
+	result := Tokenize(a)
 	fmt.Println(result)
-	result, _ = tokenize(b)
+	result = Tokenize(b)
 	fmt.Println(result)
-	result, _ = tokenize(c)
+	result = Tokenize(c)
 	fmt.Println(result)
+}
+
+func TestCountWords(t *testing.T) {
+	tokens := CountWords("she was not my favorite. my favorite was the main guy")
+	assert.Equal(t, 6, len(tokens), "these should be equal")
 }

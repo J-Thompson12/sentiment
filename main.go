@@ -10,18 +10,22 @@ import (
 	"sync"
 	"time"
 
-	classify "github.com/nuvi/justin-sentiment/classify"
+	"github.com/nuvi/justin-sentiment/compliment"
+	"github.com/nuvi/justin-sentiment/multinomial"
+	"github.com/nuvi/justin-sentiment/train"
 )
-
-var categories = []string{"positive", "negative"}
 
 // parameters
 var dataFile = "databig.txt"
-var train []document
-var test []document
-var testPercentage = 0.2
+var trainFile []document
+var testFile []document
+var testFilePercentage = 0.2
 var wg sync.WaitGroup
-var count, accurates, neutral = 0, 0, 0
+var count, compAccurates, multiAccurates, neutral = 0, 0, 0, 0
+var c train.Classifier
+var hasIDF = false
+var hasCompliment = true
+var hasMulti = true
 
 // datasets
 type document struct {
@@ -30,64 +34,76 @@ type document struct {
 }
 
 func main() {
-	hasIDF := false
 	start := time.Now()
 	setupData(dataFile)
-	fmt.Println("number of docs in TRAIN dataset:", len(train))
-	fmt.Println("number of docs in TEST dataset:", len(test))
-	c := classify.CreateClassifier(categories, hasIDF)
+	fmt.Println("number of docs in trainFile dataset:", len(trainFile))
+	fmt.Println("number of docs in testFile dataset:", len(testFile))
+	c = train.CreateClassifier()
 
-	// train on train dataset
-	// for _, doc := range train {
-	// 	c.Train(doc.sentiment, doc.text)
-	// }
-	// if hasIDF {
-	// 	for _, doc := range train {
-	// 		c.WordFreq(doc.sentiment, doc.text)
-	// 	}
-	// }
-
-	// for _, doc := range train {
-	// 	classify.RedisTrain(doc.sentiment, doc.text)
-	// }
-
-	// fmt.Println("Finished training")
-
-	// Test individual user entered sentences
-	// reader := bufio.NewReader(os.Stdin)
-	// for {
-	// 	fmt.Print("Enter sentence: ")
-	// 	text, _ := reader.ReadString('\n')
-	// 	sentiment := c.Classify(text)
-	// 	fmt.Printf("This sentence is %v\n", sentiment)
-	// }
-
-	// validate dataset
-	wg.Add(len(test))
-	for _, doc := range test {
-		count++
-		validate(doc.text, doc.sentiment, &c)
+	//trainFile on trainFile dataset
+	for _, doc := range trainFile {
+		train.Train(&c, doc.sentiment, doc.text)
+	}
+	if hasIDF {
+		for _, doc := range trainFile {
+			multinomial.TfFreq(&c, doc.sentiment, doc.text)
+		}
 	}
 
-	wg.Wait()
-	fmt.Printf("Accuracy on TEST dataset is %2.1f%% With %2.1f%% as neutral\n", float64(accurates)*100/float64(count), float64(neutral)*100/float64(count))
+	// validate dataset
+	//wg.Add(len(testFile))
+	for _, doc := range testFile {
+		count++
+		comp, multi := classify(doc.text)
+		if comp == doc.sentiment {
+			compAccurates++
+		}
+		if multi == doc.sentiment {
+			multiAccurates++
+		}
+
+	}
+
+	//wg.Wait()
+	fmt.Printf("Accuracy on multi dataset is %2.1f%% With %2.1f%% as neutral\n", float64(multiAccurates)*100/float64(count), float64(neutral)*100/float64(count))
+	fmt.Printf("Accuracy on comp dataset is %2.1f%% With %2.1f%% as neutral\n", float64(compAccurates)*100/float64(count), float64(neutral)*100/float64(count))
 	elapsed := time.Since(start)
 	log.Printf("runtime was%s", elapsed)
 }
 
-func validate(text string, docSent string, c *classify.Classifier) {
-	defer wg.Done()
-	sentiment := c.Classify(text)
-	if sentiment == docSent {
-		accurates++
+func classify(document string) (string, string) {
+	var compResult string
+	var multiResult string
+
+	// Mulitnomial naive bayes
+	if hasMulti {
+		prob := multinomial.ProbMulti(&c, document)
+		highNum := 0.0
+		for category, probability := range prob {
+			if probability >= highNum {
+				highNum = probability
+				multiResult = category
+			}
+		}
 	}
-	if sentiment == "neutral" {
-		neutral++
+
+	//compliment naive bayes uses lowest number to determine category
+	if hasCompliment {
+		prob := compliment.ProbabilitiesComp(&c, document)
+		lowNum := 99999999999990.0
+		for category, probability := range prob {
+			if probability < lowNum {
+				lowNum = probability
+				compResult = category
+			}
+		}
 	}
+
+	return compResult, multiResult
 }
 
 func setupData(file string) {
-	rand.Seed(time.Now().UTC().UnixNano())
+	//rand.Seed(time.Now().UTC().UnixNano())
 	data, err := readLines(file)
 	if err != nil {
 		fmt.Println("Cannot read file", err)
@@ -98,10 +114,10 @@ func setupData(file string) {
 		//fmt.Println(s)
 		doc, sentiment := s[3], s[1]
 
-		if rand.Float64() > testPercentage {
-			train = append(train, document{sentiment, doc})
+		if rand.Float64() > testFilePercentage {
+			trainFile = append(trainFile, document{sentiment, doc})
 		} else {
-			test = append(test, document{sentiment, doc})
+			testFile = append(testFile, document{sentiment, doc})
 		}
 	}
 }
