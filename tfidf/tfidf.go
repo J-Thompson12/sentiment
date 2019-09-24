@@ -7,8 +7,20 @@ import (
 	"github.com/nuvi/justin-sentiment/utilities"
 )
 
+func ClassifyTF(c *train.Classifier, document string) (result string, score float64) {
+	prob := probTf(c, document)
+	score = 0.0
+	for category, probability := range prob {
+		if probability >= score {
+			score = probability
+			result = category
+		}
+	}
+	return result, score
+}
+
 // ProbTf Using basic naive bayes equation to get the probability that the dataset belongs to a specific category
-func ProbTf(c *train.Classifier, document string) (p map[string]float64) {
+func probTf(c *train.Classifier, document string) (p map[string]float64) {
 	p = make(map[string]float64)
 
 	for category := range c.Words {

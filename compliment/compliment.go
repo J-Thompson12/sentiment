@@ -7,8 +7,22 @@ import (
 	"github.com/nuvi/justin-sentiment/utilities"
 )
 
+func ClassifyComp(c *train.Classifier, document string) (result string, score float64) {
+
+	//compliment naive bayes uses lowest number to determine category
+	prob := probComp(c, document)
+	score = 99999999999990.0
+	for category, probability := range prob {
+		if probability < score {
+			score = probability
+			result = category
+		}
+	}
+	return result, score
+}
+
 // ProbabilitiesComp get the compliment naive bayes score
-func ProbabilitiesComp(c *train.Classifier, document string) (p map[string]float64) {
+func probComp(c *train.Classifier, document string) (p map[string]float64) {
 	p = make(map[string]float64)
 
 	for category := range c.Words {

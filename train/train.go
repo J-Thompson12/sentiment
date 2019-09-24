@@ -38,7 +38,7 @@ type Classifier struct {
 }
 
 // CreateClassifier create and initialize the classifier
-func CreateClassifier() (c Classifier) {
+func CreateClassifier(categories []string) (c Classifier) {
 	c = Classifier{
 		Words:                 make(map[string]map[string]float64),
 		DocumentCategoryTotal: make(map[string]float64),
@@ -48,8 +48,6 @@ func CreateClassifier() (c Classifier) {
 		NumDocSeen:            make(map[string]float64),
 		NormalFreq:            make(map[string]map[string]float64),
 	}
-
-	categories := []string{"positive", "negative"}
 
 	for _, category := range categories {
 		c.Words[category] = make(map[string]float64)

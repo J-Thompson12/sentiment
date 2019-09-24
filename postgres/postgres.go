@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"fmt"
 	"os"
 
 	logit "github.com/brettallred/go-logit"
@@ -8,49 +9,51 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres" // This is needed for gorm to know to use postgres
 )
 
-// SentimentData will contain all the data for the trainer
-type SentimentData struct {
+//Classifications is a database model
+type Classifications struct {
 	Text      string `json:"text"`
-	Sentiment string `json:"sentiment"`
-	Category  string `json:"category"`
-	Sarcastic string `json:"sarcastic"`
-	Language  string
+	Sentiment int    `json:"sentiment"`
 }
 
-var db *gorm.DB
+// DB is a db connection
+type DB struct {
+	DB *gorm.DB
+}
 
 //InitPostgres initializes postgres
-func InitPostgres() {
-	logit.Info("Initializing postgres")
-	postgresURL := os.Getenv("POSTGRES_URL")
-	if postgresURL == "" {
+func InitPostgres() DB {
+	postgresqlURL := os.Getenv("POSTGRES_URL")
+	if postgresqlURL == "" {
 		logit.Fatal("No POSTGRES_URL set in .env")
 	}
 
-	var err error
-	db, err = gorm.Open("postgres", postgresURL)
+	db, err := gorm.Open("postgres", postgresqlURL)
 	if err != nil {
 		logit.Fatal(err.Error())
 	}
 
 	err = db.DB().Ping()
 	if err != nil {
-		logit.Fatal(err.Error())
+		panic(err)
 	}
-	logit.Info("Postgres is connected")
-	ensurePostgresTables()
+
+	return DB{
+		DB: db,
+	}
 }
 
-func ensurePostgresTables() {
+//EnsurePostgresTables ensures the table
+func (db DB) EnsurePostgresTables() {
 	if os.Getenv("PLATFORM_ENV") == "test" {
-		db.DropTableIfExists(&SentimentData{})
+		db.DB.DropTableIfExists(&Classifications{})
 	}
-	db.CreateTable(&SentimentData{})
-	db.AutoMigrate(&SentimentData{})
+	db.DB.CreateTable(&Classifications{})
+	db.DB.AutoMigrate(&Classifications{})
 }
 
-//GetData gets all entries in the table
-func GetData() (allData []SentimentData) {
-	db.Find(&allData)
+//GetFaschetData gets all entries in the table where a specific Faschet is not null
+func (db DB) GetFaschetData(faschet string) (allData []Classifications) {
+	query := fmt.Sprintf("SELECT * FROM classifications WHERE %v IS NOT NULL", faschet)
+	db.DB.Raw(query).Scan(&allData)
 	return allData
 }
